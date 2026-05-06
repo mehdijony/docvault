@@ -1,0 +1,12 @@
+docker pull postgres:15-alpine
+docker pull keycloak/keycloak:23.0.4
+docker pull minio/minio:RELEASE.2024-01-16T16-07-38Z
+docker pull minio/mc:RELEASE.2024-01-16T16-25-21Z
+docker pull rabbitmq:3.12-management-alpine
+docker pull apache/kafka:3.7.0
+docker pull redis:7.2-alpine
+docker pull hashicorp/vault:1.15
+docker pull prom/prometheus:v2.48.1
+docker pull grafana/grafana:10.2.3
+docker pull grafana/loki:2.9.3
+docker pull mailhog/mailhog:latest

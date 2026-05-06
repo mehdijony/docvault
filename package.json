@@ -1,0 +1,24 @@
+{
+    "name": "docvault",
+    "version": "1.0.0",
+    "private": true,
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev": "turbo run dev",
+        "build": "turbo run build",
+        "test": "turbo run test",
+        "lint": "turbo run lint",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down"
+    },
+    "devDependencies": {
+        "turbo": "^1.13.0",
+        "typescript": "^5.3.0",
+        "@types/node": "^20.0.0",
+        "prettier": "^3.2.0",
+        "eslint": "^8.57.0"
+    }
+}

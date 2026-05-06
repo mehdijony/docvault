@@ -1,0 +1,82 @@
+{
+    "vhosts": [
+        {
+            "name": "/"
+        }
+    ],
+    "exchanges": [
+        {
+            "name": "documents",
+            "vhost": "/",
+            "type": "topic",
+            "durable": true,
+            "auto_delete": false
+        },
+        {
+            "name": "documents.dlx",
+            "vhost": "/",
+            "type": "direct",
+            "durable": true,
+            "auto_delete": false
+        }
+    ],
+    "queues": [
+        {
+            "name": "document.processing",
+            "vhost": "/",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "documents.dlx",
+                "x-message-ttl": 86400000
+            }
+        },
+        {
+            "name": "document.notifications",
+            "vhost": "/",
+            "durable": true,
+            "arguments": {
+                "x-dead-letter-exchange": "documents.dlx"
+            }
+        },
+        {
+            "name": "document.cleanup",
+            "vhost": "/",
+            "durable": true
+        },
+        {
+            "name": "document.dead_letter",
+            "vhost": "/",
+            "durable": true
+        }
+    ],
+    "bindings": [
+        {
+            "source": "documents",
+            "vhost": "/",
+            "destination": "document.processing",
+            "destination_type": "queue",
+            "routing_key": "document.uploaded"
+        },
+        {
+            "source": "documents",
+            "vhost": "/",
+            "destination": "document.notifications",
+            "destination_type": "queue",
+            "routing_key": "document.shared"
+        },
+        {
+            "source": "documents",
+            "vhost": "/",
+            "destination": "document.cleanup",
+            "destination_type": "queue",
+            "routing_key": "document.deleted"
+        },
+        {
+            "source": "documents.dlx",
+            "vhost": "/",
+            "destination": "document.dead_letter",
+            "destination_type": "queue",
+            "routing_key": "#"
+        }
+    ]
+}
