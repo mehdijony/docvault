@@ -1,208 +1,205 @@
-// apps/web/src/components/documents/document-upload.tsx
-'use client';
-
-import { useCallback, useState } from 'react';
-import { useDropzone } from 'react-dropzone';
-import { Upload, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { cn, formatFileSize } from '@/lib/utils';
-import { useFileUpload } from '@/hooks/use-upload';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { useCallback, useState } from "react";
+import { useDropzone } from "react-dropzone";
+import { Upload, X, FileIcon, CheckCircle } from "lucide-react";
+import { formatFileSize, cn } from "../../lib/utils";
+import { useUpload } from "../../hooks/use-upload";
 
 interface DocumentUploadProps {
-  folderId?: string;
-  onComplete?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export function DocumentUpload({ folderId, onComplete }: DocumentUploadProps) {
-  const { files, addFiles, uploadFiles, removeFile, clearCompleted } =
-    useFileUpload();
-  const [isUploading, setIsUploading] = useState(false);
+export function DocumentUpload({ isOpen, onClose }: DocumentUploadProps) {
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const { isUploading, progress, upload, reset } = useUpload();
+  const [uploadComplete, setUploadComplete] = useState(false);
 
-  const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
-      addFiles(acceptedFiles);
-    },
-    [addFiles],
-  );
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
+      setSelectedFile(file);
+      if (!name) setName(file.name.replace(/\.[^/.]+$/, ""));
+    }
+  }, [name]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    multiple: true,
+    multiple: false,
     maxSize: 100 * 1024 * 1024, // 100MB
     accept: {
-      'application/pdf': ['.pdf'],
-      'application/msword': ['.doc'],
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-        ['.docx'],
-      'image/*': ['.jpg', '.jpeg', '.png', '.webp'],
-      'text/plain': ['.txt'],
-      'application/vnd.ms-excel': ['.xls'],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
-        ['.xlsx'],
+      "application/pdf": [".pdf"],
+      "application/msword": [".doc"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+      "application/vnd.ms-excel": [".xls"],
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/webp": [".webp"],
+      "text/plain": [".txt"],
     },
   });
 
   const handleUpload = async () => {
-    const pendingFiles = files.filter((f) => f.status === 'pending');
-    if (pendingFiles.length === 0) return;
-
-    setIsUploading(true);
-    await uploadFiles(pendingFiles, { folderId });
-    setIsUploading(false);
-    onComplete?.();
+    if (!selectedFile) return;
+    try {
+      await upload(
+        selectedFile,
+        name || selectedFile.name,
+        description || undefined,
+        tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : undefined
+      );
+      setUploadComplete(true);
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
+    } catch {
+      // Error handled in hook
+    }
   };
 
-  const pendingCount = files.filter((f) => f.status === 'pending').length;
-  const doneCount = files.filter((f) => f.status === 'done').length;
-  const errorCount = files.filter((f) => f.status === 'error').length;
+  const handleClose = () => {
+    setName("");
+    setDescription("");
+    setTags("");
+    setSelectedFile(null);
+    setUploadComplete(false);
+    reset();
+    onClose();
+  };
+
+  if (!isOpen) return null;
 
   return (
-    <div className="space-y-4">
-      {/* Drop Zone */}
-      <div
-        {...getRootProps()}
-        className={cn(
-          'border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all',
-          'hover:border-blue-400 hover:bg-blue-50',
-          isDragActive
-            ? 'border-blue-500 bg-blue-50 scale-105'
-            : 'border-gray-300 bg-gray-50',
-        )}
-      >
-        <input {...getInputProps()} />
-        <Upload
-          className={cn(
-            'mx-auto h-12 w-12 mb-4',
-            isDragActive ? 'text-blue-500' : 'text-gray-400',
-          )}
-        />
-        {isDragActive ? (
-          <p className="text-blue-600 font-medium text-lg">Drop files here...</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 bg-black/50" onClick={handleClose} />
+      <div className="relative z-10 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl animate-fade-in">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-slate-900">Upload Document</h2>
+          <button onClick={handleClose} className="text-slate-400 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {uploadComplete ? (
+          <div className="flex flex-col items-center py-8">
+            <CheckCircle className="h-16 w-16 text-emerald-500 mb-4" />
+            <p className="text-lg font-semibold text-slate-900">Upload Complete!</p>
+            <p className="text-sm text-slate-500 mt-1">Your document is being processed.</p>
+          </div>
         ) : (
           <>
-            <p className="text-gray-700 font-medium text-lg">
-              Drag & drop files here
-            </p>
-            <p className="text-gray-500 text-sm mt-1">
-              or click to browse — PDF, Word, Excel, Images up to 100MB
-            </p>
+            {/* Drop zone */}
+            <div
+              {...getRootProps()}
+              className={cn(
+                "flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors cursor-pointer",
+                isDragActive
+                  ? "border-blue-400 bg-blue-50"
+                  : selectedFile
+                  ? "border-emerald-300 bg-emerald-50"
+                  : "border-slate-300 bg-slate-50 hover:border-blue-300 hover:bg-blue-50/50"
+              )}
+            >
+              <input {...getInputProps()} />
+              {selectedFile ? (
+                <div className="text-center">
+                  <FileIcon className="h-10 w-10 text-blue-500 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-slate-900">{selectedFile.name}</p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {formatFileSize(selectedFile.size)}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Upload className="h-10 w-10 text-slate-400 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-slate-700">
+                    {isDragActive ? "Drop your file here" : "Drag & drop your file here"}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">
+                    PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, TXT (max 100MB)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Form fields */}
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Document Name
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter document name"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description of the document"
+                  rows={2}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Tags (comma separated)
+                </label>
+                <input
+                  type="text"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  placeholder="e.g. finance, quarterly, 2026"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            {isUploading && (
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-slate-600">Uploading...</span>
+                  <span className="text-blue-600 font-medium">{progress}%</span>
+                </div>
+                <div className="h-2 rounded-full bg-slate-200">
+                  <div
+                    className="h-2 rounded-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={handleClose}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpload}
+                disabled={!selectedFile || isUploading || !name}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploading ? "Uploading..." : "Upload"}
+              </button>
+            </div>
           </>
         )}
       </div>
-
-      {/* File List */}
-      {files.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-gray-700">
-              Files ({files.length})
-            </h3>
-            {doneCount > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearCompleted}
-              >
-                Clear completed
-              </Button>
-            )}
-          </div>
-
-          {files.map((file) => (
-            <div
-              key={file.id}
-              className="flex items-center gap-3 p-3 bg-white border rounded-lg"
-            >
-              {/* Status Icon */}
-              <div className="flex-shrink-0">
-                {file.status === 'done' && (
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                )}
-                {file.status === 'error' && (
-                  <AlertCircle className="h-5 w-5 text-red-500" />
-                )}
-                {file.status === 'uploading' && (
-                  <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
-                )}
-                {file.status === 'pending' && (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
-                )}
-              </div>
-
-              {/* File Info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">
-                  {file.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formatFileSize(file.file.size)}
-                </p>
-                {file.status === 'uploading' && (
-                  <Progress value={file.progress} className="h-1 mt-1" />
-                )}
-                {file.status === 'error' && (
-                  <p className="text-xs text-red-500 mt-1">{file.error}</p>
-                )}
-              </div>
-
-              {/* Progress % */}
-              {file.status === 'uploading' && (
-                <span className="text-sm text-gray-500 flex-shrink-0">
-                  {file.progress}%
-                </span>
-              )}
-
-              {/* Remove Button */}
-              {(file.status === 'pending' || file.status === 'error') && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 flex-shrink-0"
-                  onClick={() => removeFile(file.id)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Stats Summary */}
-      {files.length > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="flex gap-4 text-sm text-gray-500">
-            {pendingCount > 0 && (
-              <span>{pendingCount} pending</span>
-            )}
-            {doneCount > 0 && (
-              <span className="text-green-600">{doneCount} uploaded</span>
-            )}
-            {errorCount > 0 && (
-              <span className="text-red-600">{errorCount} failed</span>
-            )}
-          </div>
-
-          <Button
-            onClick={handleUpload}
-            disabled={pendingCount === 0 || isUploading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : (
-              <>
-                <Upload className="mr-2 h-4 w-4" />
-                Upload {pendingCount} file{pendingCount !== 1 ? 's' : ''}
-              </>
-            )}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

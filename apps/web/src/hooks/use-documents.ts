@@ -1,119 +1,107 @@
-// apps/web/src/hooks/use-documents.ts
-import {
-  useQuery,
-  useMutation,
-  useQueryClient,
-  UseQueryOptions,
-} from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { documentsApi, Document, SearchDocumentsParams } from '@/lib/api/documents';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { documentsApi } from "../lib/api/documents";
+import type { DocumentListParams, UploadDocumentDto, UpdateDocumentDto, CreateShareDto } from "../types";
+import { toast } from "sonner";
 
-export const documentKeys = {
-  all: ['documents'] as const,
-  lists: () => [...documentKeys.all, 'list'] as const,
-  list: (params?: SearchDocumentsParams) =>
-    [...documentKeys.lists(), params] as const,
-  details: () => [...documentKeys.all, 'detail'] as const,
-  detail: (id: string) => [...documentKeys.details(), id] as const,
-};
-
-// List documents
-export function useDocuments(params?: SearchDocumentsParams) {
+export function useDocuments(params?: DocumentListParams) {
   return useQuery({
-    queryKey: documentKeys.list(params),
-    queryFn: () => documentsApi.getAll(params),
-    staleTime: 30 * 1000, // 30 seconds
+    queryKey: ["documents", params],
+    queryFn: () => documentsApi.list(params),
   });
 }
 
-// Single document
-export function useDocument(id: string, options?: Partial<UseQueryOptions>) {
+export function useDocument(id: string) {
   return useQuery({
-    queryKey: documentKeys.detail(id),
+    queryKey: ["document", id],
     queryFn: () => documentsApi.getById(id),
     enabled: !!id,
-    ...options,
   });
 }
 
-// Upload document
 export function useUploadDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
-      file,
-      metadata,
+      dto,
       onProgress,
     }: {
-      file: File;
-      metadata: Parameters<typeof documentsApi.upload>[1];
+      dto: UploadDocumentDto;
       onProgress?: (progress: number) => void;
-    }) => documentsApi.upload(file, metadata, onProgress),
-
-    onSuccess: (document) => {
-      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
-      toast.success(`"${document.name}" uploaded successfully`);
+    }) => documentsApi.upload(dto, onProgress),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Document uploaded successfully");
     },
-
-    onError: (error: Error) => {
-      toast.error(`Upload failed: ${error.message}`);
+    onError: () => {
+      toast.error("Failed to upload document");
     },
   });
 }
 
-// Update document
 export function useUpdateDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Parameters<typeof documentsApi.update>[1];
-    }) => documentsApi.update(id, data),
-
-    onSuccess: (document) => {
-      queryClient.invalidateQueries({ queryKey: documentKeys.detail(document.id) });
-      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
-      toast.success('Document updated');
+    mutationFn: ({ id, dto }: { id: string; dto: UpdateDocumentDto }) =>
+      documentsApi.update(id, dto),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({
+        queryKey: ["document", variables.id],
+      });
+      toast.success("Document updated successfully");
     },
-
-    onError: (error: Error) => {
-      toast.error(`Update failed: ${error.message}`);
+    onError: () => {
+      toast.error("Failed to update document");
     },
   });
 }
 
-// Delete document
 export function useDeleteDocument() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (id: string) => documentsApi.delete(id),
-
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: documentKeys.lists() });
-      toast.success('Document deleted');
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Document deleted successfully");
     },
-
-    onError: (error: Error) => {
-      toast.error(`Delete failed: ${error.message}`);
+    onError: () => {
+      toast.error("Failed to delete document");
     },
   });
 }
 
-// Get download URL
 export function useDownloadDocument() {
   return useMutation({
-    mutationFn: (id: string) => documentsApi.getDownloadUrl(id),
-    onSuccess: ({ url }) => {
-      window.open(url, '_blank');
+    mutationFn: async (id: string) => {
+      const result = await documentsApi.getDownloadUrl(id);
+      if (result.url && result.url !== "#") {
+        window.open(result.url, "_blank");
+      }
+      return result;
     },
-    onError: (error: Error) => {
-      toast.error(`Download failed: ${error.message}`);
+    onError: () => {
+      toast.error("Failed to generate download link");
+    },
+  });
+}
+
+export function useCreateShare() {
+  return useMutation({
+    mutationFn: ({
+      id,
+      dto,
+    }: {
+      id: string;
+      dto: CreateShareDto;
+    }) => documentsApi.createShare(id, dto),
+    onSuccess: () => {
+      toast.success("Share link created successfully");
+    },
+    onError: () => {
+      toast.error("Failed to create share link");
     },
   });
 }

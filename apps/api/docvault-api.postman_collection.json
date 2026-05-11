@@ -1,0 +1,1226 @@
+{
+    "info": {
+        "name": "DocVault API",
+        "description": "Complete API collection for DocVault - Multi-tenant Document Management Platform",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "version": "1.0.0"
+    },
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:4000/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "keycloakUrl",
+            "value": "http://localhost:8080",
+            "type": "string"
+        },
+        {
+            "key": "realm",
+            "value": "docvault",
+            "type": "string"
+        },
+        {
+            "key": "clientId",
+            "value": "docvault-api",
+            "type": "string"
+        },
+        {
+            "key": "clientSecret",
+            "value": "docvault-api-secret",
+            "type": "string"
+        },
+        {
+            "key": "accessToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "refreshToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "documentId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "userId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "folderId",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "shareToken",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "notificationId",
+            "value": "",
+            "type": "string"
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "item": [
+        {
+            "name": "🔐 Authentication",
+            "description": "All authentication endpoints. Start here - run 'Direct Login (Testing)' first to get your access token.",
+            "item": [
+                {
+                    "name": "Direct Login (Testing Only)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "",
+                                    "if (response.data && response.data.access_token) {",
+                                    "    pm.collectionVariables.set('accessToken', response.data.access_token);",
+                                    "    pm.collectionVariables.set('refreshToken', response.data.refresh_token);",
+                                    "    console.log('✅ Tokens saved to collection variables');",
+                                    "    console.log('Access token expires in:', response.data.expires_in, 'seconds');",
+                                    "} else {",
+                                    "    console.log('❌ Login failed:', JSON.stringify(response));",
+                                    "}",
+                                    "",
+                                    "pm.test('Login successful', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(response.data).to.have.property('access_token');",
+                                    "    pm.expect(response.data).to.have.property('refresh_token');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"direct-grant\",\n  \"redirectUri\": \"http://localhost:3000/callback\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token",
+                            "host": [
+                                "{{keycloakUrl}}"
+                            ],
+                            "path": [
+                                "realms",
+                                "{{realm}}",
+                                "protocol",
+                                "openid-connect",
+                                "token"
+                            ]
+                        },
+                        "description": "⚠️ This calls Keycloak directly for testing purposes.\nIn production, use the OAuth2 authorization code flow.\n\nAfter running this, the access token is automatically saved."
+                    },
+                    "response": [
+                        {
+                            "name": "Login Success",
+                            "originalRequest": {
+                                "method": "POST",
+                                "url": {
+                                    "raw": "{{keycloakUrl}}/realms/{{realm}}/protocol/openid-connect/token"
+                                },
+                                "body": {
+                                    "mode": "urlencoded",
+                                    "urlencoded": [
+                                        {
+                                            "key": "grant_type",
+                                            "value": "password"
+                                        },
+                                        {
+                                            "key": "client_id",
+                                            "value": "docvault-api"
+                                        },
+                                        {
+                                            "key": "client_secret",
+                                            "value": "docvault-api-secret"
+                                        },
+                                        {
+                                            "key": "username",
+                                            "value": "admin@docvault.dev"
+                                        },
+                                        {
+                                            "key": "password",
+                                            "value": "admin123"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJhYmMxMjMifQ.eyJzdWIiOiJ1c2VyLXV1aWQiLCJlbWFpbCI6ImFkbWluQGRvY3ZhdWx0LmRldiIsImdpdmVuX25hbWUiOiJBZG1pbiIsImZhbWlseV9uYW1lIjoiVXNlciIsInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvd25lciIsImFkbWluIl19LCJvcmdhbml6YXRpb25faWQiOiJkZWZhdWx0LW9yZyIsImV4cCI6MTc0NjUyMzYwMCwiaWF0IjoxNzQ2NTIzMzAwfQ.signature\",\n  \"expires_in\": 300,\n  \"refresh_expires_in\": 1800,\n  \"refresh_token\": \"eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJyZWZyZXNoLWtleSJ9.eyJzdWIiOiJ1c2VyLXV1aWQifQ.refresh-signature\",\n  \"token_type\": \"Bearer\",\n  \"not-before-policy\": 0,\n  \"session_state\": \"session-uuid\",\n  \"scope\": \"openid email profile\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Login URL",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login?redirectUri=http://localhost:3000/callback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ],
+                            "query": [
+                                {
+                                    "key": "redirectUri",
+                                    "value": "http://localhost:3000/callback",
+                                    "description": "Where Keycloak redirects after login"
+                                }
+                            ]
+                        },
+                        "description": "Returns the Keycloak login URL. Redirect the user to this URL to start OAuth2 flow."
+                    },
+                    "response": [
+                        {
+                            "name": "Login URL Response",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"url\": \"http://localhost:8080/realms/docvault/protocol/openid-connect/auth?client_id=docvault-api&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback&response_type=code&scope=openid+email+profile\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/auth/login\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Exchange Code for Tokens",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "if (response.data && response.data.access_token) {",
+                                    "    pm.collectionVariables.set('accessToken', response.data.access_token);",
+                                    "    pm.collectionVariables.set('refreshToken', response.data.refresh_token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"code\": \"AUTHORIZATION_CODE_FROM_KEYCLOAK_REDIRECT\",\n  \"redirectUri\": \"http://localhost:3000/callback\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/callback",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "callback"
+                            ]
+                        },
+                        "description": "Step 2 of OAuth flow. Exchange the authorization code for tokens."
+                    },
+                    "response": [
+                        {
+                            "name": "Token Exchange Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"access_token\": \"eyJhbGciOiJSUzI1NiJ9...\",\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiJ9...\",\n    \"expires_in\": 300,\n    \"refresh_expires_in\": 1800,\n    \"token_type\": \"Bearer\",\n    \"scope\": \"openid email profile\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/auth/callback\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Refresh Access Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "if (response.data && response.data.access_token) {",
+                                    "    pm.collectionVariables.set('accessToken', response.data.access_token);",
+                                    "    pm.collectionVariables.set('refreshToken', response.data.refresh_token);",
+                                    "    console.log('✅ Tokens refreshed successfully');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/refresh",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Get a new access token using the refresh token. Call this before access token expires (every ~4 minutes)."
+                    },
+                    "response": [
+                        {
+                            "name": "Refresh Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"access_token\": \"eyJhbGciOiJSUzI1NiJ9.NEW_TOKEN...\",\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiJ9.NEW_REFRESH...\",\n    \"expires_in\": 300,\n    \"refresh_expires_in\": 1800,\n    \"token_type\": \"Bearer\"\n  },\n  \"timestamp\": \"2026-05-06T10:05:00.000Z\",\n  \"path\": \"/api/v1/auth/refresh\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "Invalidates the session in Keycloak. The refresh token will no longer work."
+                    },
+                    "response": [
+                        {
+                            "name": "Logout Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"message\": \"Logged out successfully\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/auth/logout\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Current User (from JWT)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "if (response.data && response.data.id) {",
+                                    "    pm.collectionVariables.set('userId', response.data.id);",
+                                    "    console.log('✅ User ID saved:', response.data.id);",
+                                    "}",
+                                    "pm.test('Returns current user', function() {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    pm.expect(response.data).to.have.property('email');",
+                                    "    pm.expect(response.data).to.have.property('role');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "me"
+                            ]
+                        },
+                        "description": "Returns current user info decoded from the JWT token."
+                    },
+                    "response": [
+                        {
+                            "name": "Current User Response",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"keycloakId\": \"kc-uuid-admin\",\n    \"email\": \"admin@docvault.dev\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"User\",\n    \"role\": \"owner\",\n    \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/auth/me\"\n}"
+                        },
+                        {
+                            "name": "Unauthorized - No Token",
+                            "status": "Unauthorized",
+                            "code": 401,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/auth/me\",\n  \"method\": \"GET\",\n  \"message\": \"Invalid or expired token\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "🏢 Organizations",
+            "description": "Organization management endpoints",
+            "item": [
+                {
+                    "name": "Get My Organization",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "me"
+                            ]
+                        },
+                        "description": "Returns the current user's organization details including storage usage."
+                    },
+                    "response": [
+                        {
+                            "name": "Organization Details",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"name\": \"Acme Corporation\",\n    \"slug\": \"acme-corporation\",\n    \"description\": \"Leading provider of everything\",\n    \"logoUrl\": null,\n    \"plan\": \"pro\",\n    \"status\": \"active\",\n    \"keycloakRealmId\": \"docvault\",\n    \"storageQuotaBytes\": 5368709120,\n    \"storageUsedBytes\": 2147483648,\n    \"storageBucket\": \"org-550e8400\",\n    \"settings\": {\n      \"allowPublicSharing\": true,\n      \"requireMfa\": false\n    },\n    \"createdAt\": \"2026-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2026-05-06T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/organizations/me\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update My Organization",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Acme Corporation Updated\",\n  \"description\": \"Updated company description\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/organizations/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "organizations",
+                                "me"
+                            ]
+                        },
+                        "description": "Update organization name or description. Requires Admin or Owner role."
+                    },
+                    "response": [
+                        {
+                            "name": "Update Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"name\": \"Acme Corporation Updated\",\n    \"slug\": \"acme-corporation\",\n    \"description\": \"Updated company description\",\n    \"plan\": \"pro\",\n    \"status\": \"active\",\n    \"storageQuotaBytes\": 5368709120,\n    \"storageUsedBytes\": 2147483648,\n    \"updatedAt\": \"2026-05-06T11:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T11:00:00.000Z\",\n  \"path\": \"/api/v1/organizations/me\"\n}"
+                        },
+                        {
+                            "name": "Forbidden - Insufficient Role",
+                            "status": "Forbidden",
+                            "code": 403,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 403,\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/organizations/me\",\n  \"method\": \"PATCH\",\n  \"message\": \"Requires one of these roles: admin, owner\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "👤 Users",
+            "description": "User management within an organization",
+            "item": [
+                {
+                    "name": "List All Users",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/users",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ]
+                        },
+                        "description": "Get all users in the current organization. Admin/Owner only."
+                    },
+                    "response": [
+                        {
+                            "name": "Users List",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"email\": \"admin@docvault.dev\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"User\",\n      \"role\": \"owner\",\n      \"status\": \"active\",\n      \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"lastLoginAt\": \"2026-05-06T09:00:00.000Z\",\n      \"createdAt\": \"2026-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2026-05-06T09:00:00.000Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n      \"email\": \"john.smith@acme.com\",\n      \"firstName\": \"John\",\n      \"lastName\": \"Smith\",\n      \"role\": \"editor\",\n      \"status\": \"active\",\n      \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"lastLoginAt\": \"2026-05-05T14:30:00.000Z\",\n      \"createdAt\": \"2026-02-15T00:00:00.000Z\",\n      \"updatedAt\": \"2026-05-05T14:30:00.000Z\"\n    },\n    {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440003\",\n      \"email\": \"jane.doe@acme.com\",\n      \"firstName\": \"Jane\",\n      \"lastName\": \"Doe\",\n      \"role\": \"viewer\",\n      \"status\": \"active\",\n      \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"lastLoginAt\": \"2026-05-04T11:00:00.000Z\",\n      \"createdAt\": \"2026-03-01T00:00:00.000Z\",\n      \"updatedAt\": \"2026-05-04T11:00:00.000Z\"\n    }\n  ],\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/users\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get My Profile",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/users/me",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "me"
+                            ]
+                        },
+                        "description": "Get current user's full profile from database."
+                    },
+                    "response": [
+                        {
+                            "name": "My Profile",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"email\": \"admin@docvault.dev\",\n    \"firstName\": \"Admin\",\n    \"lastName\": \"User\",\n    \"avatarUrl\": null,\n    \"keycloakId\": \"kc-uuid-admin\",\n    \"role\": \"owner\",\n    \"status\": \"active\",\n    \"lastLoginAt\": \"2026-05-06T09:00:00.000Z\",\n    \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"organization\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n      \"name\": \"Acme Corporation\",\n      \"plan\": \"pro\"\n    },\n    \"preferences\": {\n      \"theme\": \"light\",\n      \"notifications\": true\n    },\n    \"createdAt\": \"2026-01-01T00:00:00.000Z\",\n    \"updatedAt\": \"2026-05-06T09:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/users/me\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get User by ID",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        },
+                        "description": "Get a specific user by UUID. Admin/Owner only."
+                    },
+                    "response": [
+                        {
+                            "name": "User Found",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n    \"email\": \"john.smith@acme.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Smith\",\n    \"role\": \"editor\",\n    \"status\": \"active\",\n    \"lastLoginAt\": \"2026-05-05T14:30:00.000Z\",\n    \"createdAt\": \"2026-02-15T00:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/users/550e8400-e29b-41d4-a716-446655440002\"\n}"
+                        },
+                        {
+                            "name": "User Not Found",
+                            "status": "Not Found",
+                            "code": 404,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 404,\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/users/non-existent-uuid\",\n  \"method\": \"GET\",\n  \"message\": \"User non-existent-uuid not found\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update User Role",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": \"editor\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}/role",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}",
+                                "role"
+                            ]
+                        },
+                        "description": "Change a user's role. Available roles: owner, admin, editor, viewer. Admin/Owner only."
+                    },
+                    "response": [
+                        {
+                            "name": "Role Updated",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n    \"email\": \"john.smith@acme.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Smith\",\n    \"role\": \"editor\",\n    \"status\": \"active\",\n    \"updatedAt\": \"2026-05-06T11:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T11:00:00.000Z\",\n  \"path\": \"/api/v1/users/550e8400-e29b-41d4-a716-446655440002/role\"\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "📄 Documents",
+            "description": "Core document management - upload, list, download, share, delete",
+            "item": [
+                {
+                    "name": "Upload Document",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "if (response.data && response.data.id) {",
+                                    "    pm.collectionVariables.set('documentId', response.data.id);",
+                                    "    console.log('✅ Document ID saved:', response.data.id);",
+                                    "}",
+                                    "pm.test('Document uploaded', function() {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    pm.expect(response.data.status).to.equal('processing');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "description": "The file to upload (PDF, Word, Excel, Image, Text - max 100MB)"
+                                },
+                                {
+                                    "key": "name",
+                                    "value": "Q1 Financial Report 2026",
+                                    "type": "text",
+                                    "description": "Display name for the document"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Financial results and analysis for Q1 2026",
+                                    "type": "text",
+                                    "description": "Optional description"
+                                },
+                                {
+                                    "key": "tags",
+                                    "value": "finance,quarterly,2026",
+                                    "type": "text",
+                                    "description": "Comma-separated tags"
+                                },
+                                {
+                                    "key": "folderId",
+                                    "value": "",
+                                    "type": "text",
+                                    "description": "Optional folder UUID",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/upload",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "upload"
+                            ]
+                        },
+                        "description": "Upload a new document. Use multipart/form-data.\n\nSupported types: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, WEBP, TXT\nMax size: 100MB\n\nAfter upload, the document status is 'processing'. Poll GET /documents/:id until status becomes 'ready'."
+                    },
+                    "response": [
+                        {
+                            "name": "Upload Success - Processing",
+                            "status": "Created",
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"name\": \"Q1 Financial Report 2026\",\n    \"description\": \"Financial results and analysis for Q1 2026\",\n    \"originalFilename\": \"q1-report.pdf\",\n    \"mimeType\": \"application/pdf\",\n    \"sizeBytes\": 2097152,\n    \"status\": \"processing\",\n    \"storagePath\": \"org-550e8400/documents/d4e5f6a7/v1/q1-report.pdf\",\n    \"thumbnailPath\": null,\n    \"extractedText\": null,\n    \"tags\": [\"finance\", \"quarterly\", \"2026\"],\n    \"currentVersion\": 1,\n    \"metadata\": null,\n    \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"uploadedById\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"folderId\": null,\n    \"createdAt\": \"2026-05-06T10:00:00.000Z\",\n    \"updatedAt\": \"2026-05-06T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents/upload\"\n}"
+                        },
+                        {
+                            "name": "Validation Error - No File",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents/upload\",\n  \"method\": \"POST\",\n  \"message\": [\"name should not be empty\"],\n  \"errors\": null\n}"
+                        },
+                        {
+                            "name": "File Type Not Allowed",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"File type application/exe not allowed\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "List Documents",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/documents?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20",
+                                    "description": "Results per page (max: 100, default: 20)"
+                                },
+                                {
+                                    "key": "query",
+                                    "value": "",
+                                    "description": "Search in name, description, extracted text",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "folderId",
+                                    "value": "",
+                                    "description": "Filter by folder UUID",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "tags",
+                                    "value": "",
+                                    "description": "Filter by tags",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Get paginated list of documents. Only shows documents from current user's organization."
+                    },
+                    "response": [
+                        {
+                            "name": "Documents List",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n        \"name\": \"Q1 Financial Report 2026\",\n        \"description\": \"Financial results and analysis for Q1 2026\",\n        \"originalFilename\": \"q1-report.pdf\",\n        \"mimeType\": \"application/pdf\",\n        \"sizeBytes\": 2097152,\n        \"status\": \"ready\",\n        \"thumbnailPath\": \"org-550e8400/thumbnails/d4e5f6a7/thumb.webp\",\n        \"tags\": [\"finance\", \"quarterly\", \"2026\"],\n        \"currentVersion\": 1,\n        \"uploadedBy\": {\n          \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n          \"firstName\": \"Admin\",\n          \"lastName\": \"User\",\n          \"email\": \"admin@docvault.dev\"\n        },\n        \"folder\": null,\n        \"createdAt\": \"2026-05-06T10:00:00.000Z\",\n        \"updatedAt\": \"2026-05-06T10:01:00.000Z\"\n      },\n      {\n        \"id\": \"e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b\",\n        \"name\": \"Employee Handbook\",\n        \"description\": \"Company policies and procedures\",\n        \"originalFilename\": \"handbook-2026.docx\",\n        \"mimeType\": \"application/vnd.openxmlformats-officedocument.wordprocessingml.document\",\n        \"sizeBytes\": 524288,\n        \"status\": \"ready\",\n        \"thumbnailPath\": null,\n        \"tags\": [\"hr\", \"policies\"],\n        \"currentVersion\": 3,\n        \"uploadedBy\": {\n          \"id\": \"550e8400-e29b-41d4-a716-446655440002\",\n          \"firstName\": \"John\",\n          \"lastName\": \"Smith\",\n          \"email\": \"john.smith@acme.com\"\n        },\n        \"folder\": {\n          \"id\": \"f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0c\",\n          \"name\": \"HR Documents\"\n        },\n        \"createdAt\": \"2026-04-01T09:00:00.000Z\",\n        \"updatedAt\": \"2026-05-01T09:00:00.000Z\"\n      },\n      {\n        \"id\": \"f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8a9b0d\",\n        \"name\": \"Product Roadmap Q2\",\n        \"description\": \"Product development plans for Q2 2026\",\n        \"originalFilename\": \"roadmap-q2.xlsx\",\n        \"mimeType\": \"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet\",\n        \"sizeBytes\": 131072,\n        \"status\": \"processing\",\n        \"thumbnailPath\": null,\n        \"tags\": [\"product\", \"roadmap\"],\n        \"currentVersion\": 1,\n        \"uploadedBy\": {\n          \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n          \"firstName\": \"Admin\",\n          \"lastName\": \"User\",\n          \"email\": \"admin@docvault.dev\"\n        },\n        \"folder\": null,\n        \"createdAt\": \"2026-05-06T09:55:00.000Z\",\n        \"updatedAt\": \"2026-05-06T09:55:00.000Z\"\n      }\n    ],\n    \"total\": 47,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 3\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents\"\n}"
+                        },
+                        {
+                            "name": "Search Results",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n        \"name\": \"Q1 Financial Report 2026\",\n        \"mimeType\": \"application/pdf\",\n        \"sizeBytes\": 2097152,\n        \"status\": \"ready\",\n        \"tags\": [\"finance\", \"quarterly\", \"2026\"],\n        \"createdAt\": \"2026-05-06T10:00:00.000Z\"\n      }\n    ],\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 1\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents?query=financial\"\n}"
+                        },
+                        {
+                            "name": "Empty Results",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [],\n    \"total\": 0,\n    \"page\": 1,\n    \"limit\": 20,\n    \"totalPages\": 0\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Document by ID",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/{{documentId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "{{documentId}}"
+                            ]
+                        },
+                        "description": "Get full document details including version history and folder info."
+                    },
+                    "response": [
+                        {
+                            "name": "Document Ready",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"name\": \"Q1 Financial Report 2026\",\n    \"description\": \"Financial results and analysis for Q1 2026\",\n    \"originalFilename\": \"q1-report.pdf\",\n    \"mimeType\": \"application/pdf\",\n    \"sizeBytes\": 2097152,\n    \"status\": \"ready\",\n    \"storagePath\": \"org-550e8400/documents/d4e5f6a7/v1/q1-report.pdf\",\n    \"thumbnailPath\": \"org-550e8400/thumbnails/d4e5f6a7/thumb.webp\",\n    \"extractedText\": \"Q1 2026 Financial Report\\nRevenue: $4.2M\\nExpenses: $3.1M\\nNet Income: $1.1M\",\n    \"tags\": [\"finance\", \"quarterly\", \"2026\"],\n    \"currentVersion\": 2,\n    \"metadata\": {\n      \"pageCount\": 24,\n      \"author\": \"Finance Team\"\n    },\n    \"uploadedBy\": {\n      \"id\": \"550e8400-e29b-41d4-a716-446655440001\",\n      \"firstName\": \"Admin\",\n      \"lastName\": \"User\",\n      \"email\": \"admin@docvault.dev\"\n    },\n    \"folder\": null,\n    \"versions\": [\n      {\n        \"id\": \"v1-uuid\",\n        \"versionNumber\": 1,\n        \"storagePath\": \"org-550e8400/documents/d4e5f6a7/v1/q1-report.pdf\",\n        \"sizeBytes\": 1048576,\n        \"changeNote\": \"Initial upload\",\n        \"uploadedById\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"createdAt\": \"2026-05-01T10:00:00.000Z\"\n      },\n      {\n        \"id\": \"v2-uuid\",\n        \"versionNumber\": 2,\n        \"storagePath\": \"org-550e8400/documents/d4e5f6a7/v2/q1-report.pdf\",\n        \"sizeBytes\": 2097152,\n        \"changeNote\": \"Updated with corrected revenue figures\",\n        \"uploadedById\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"createdAt\": \"2026-05-06T10:00:00.000Z\"\n      }\n    ],\n    \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"createdAt\": \"2026-05-01T10:00:00.000Z\",\n    \"updatedAt\": \"2026-05-06T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\"\n}"
+                        },
+                        {
+                            "name": "Document Still Processing",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"name\": \"Q1 Financial Report 2026\",\n    \"status\": \"processing\",\n    \"thumbnailPath\": null,\n    \"createdAt\": \"2026-05-06T10:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:05.000Z\",\n  \"path\": \"/api/v1/documents/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\"\n}"
+                        },
+                        {
+                            "name": "Not Found",
+                            "status": "Not Found",
+                            "code": 404,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 404,\n  \"message\": \"Document d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a not found\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Download URL",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/{{documentId}}/download",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "{{documentId}}",
+                                "download"
+                            ]
+                        },
+                        "description": "Get a presigned URL for direct file download from MinIO. URL expires in 1 hour.\n\nThe user's browser should be redirected to or open this URL directly.\nThe file is served directly from MinIO - NOT through the API."
+                    },
+                    "response": [
+                        {
+                            "name": "Download URL Generated",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"url\": \"http://localhost:9000/documents/org-550e8400/documents/d4e5f6a7/v2/q1-report.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=minioadmin%2F20260506%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260506T100000Z&X-Amz-Expires=3600&X-Amz-SignedHeaders=host&X-Amz-Signature=abc123def456\",\n    \"expiresIn\": 3600\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a/download\"\n}"
+                        },
+                        {
+                            "name": "Document Not Ready",
+                            "status": "Bad Request",
+                            "code": 400,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"Document is not ready for download\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Update Document Metadata",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Q1 Financial Report 2026 (Final)\",\n  \"description\": \"Final approved version with board signatures\",\n  \"tags\": [\"finance\", \"quarterly\", \"2026\", \"final\", \"approved\"]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/{{documentId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "{{documentId}}"
+                            ]
+                        },
+                        "description": "Update document name, description, folder, or tags.\nDoes NOT upload a new file version."
+                    },
+                    "response": [
+                        {
+                            "name": "Update Success",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"name\": \"Q1 Financial Report 2026 (Final)\",\n    \"description\": \"Final approved version with board signatures\",\n    \"tags\": [\"finance\", \"quarterly\", \"2026\", \"final\", \"approved\"],\n    \"status\": \"ready\",\n    \"updatedAt\": \"2026-05-06T11:00:00.000Z\"\n  },\n  \"timestamp\": \"2026-05-06T11:00:00.000Z\",\n  \"path\": \"/api/v1/documents/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Create Share Link",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "const response = pm.response.json();",
+                                    "if (response.data && response.data.token) {",
+                                    "    pm.collectionVariables.set('shareToken', response.data.token);",
+                                    "    console.log('✅ Share token saved:', response.data.token);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permission\": \"view\",\n  \"expiresAt\": \"2026-06-06T00:00:00.000Z\",\n  \"isPublic\": true,\n  \"maxAccessCount\": 100\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/{{documentId}}/share",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "{{documentId}}",
+                                "share"
+                            ]
+                        },
+                        "description": "Create a shareable link for a document.\n\nPermission levels:\n- view: Can only view the document\n- download: Can view and download\n- edit: Can view, download, and edit metadata\n\nSet isPublic:true for anyone-with-link access.\nSet isPublic:false to restrict to specific users."
+                    },
+                    "response": [
+                        {
+                            "name": "Share Link Created",
+                            "status": "Created",
+                            "code": 201,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"s1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c\",\n    \"token\": \"xK9mP2nQ5rT8vW1yZ4aB7cD\",\n    \"permission\": \"view\",\n    \"isPublic\": true,\n    \"expiresAt\": \"2026-06-06T00:00:00.000Z\",\n    \"accessCount\": 0,\n    \"maxAccessCount\": 100,\n    \"documentId\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n    \"createdById\": \"550e8400-e29b-41d4-a716-446655440001\",\n    \"createdAt\": \"2026-05-06T10:00:00.000Z\",\n    \"shareUrl\": \"http://localhost:3000/shared/xK9mP2nQ5rT8vW1yZ4aB7cD\"\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/documents/d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a/share\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete Document",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/documents/{{documentId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents",
+                                "{{documentId}}"
+                            ]
+                        },
+                        "description": "Soft-delete a document. The file is NOT immediately removed from storage.\nA background cleanup worker handles the actual file deletion.\n\nEditor: can only delete their own documents\nAdmin/Owner: can delete any document"
+                    },
+                    "response": [
+                        {
+                            "name": "Deleted Successfully",
+                            "status": "No Content",
+                            "code": 204,
+                            "body": ""
+                        },
+                        {
+                            "name": "Forbidden - Not Your Document",
+                            "status": "Forbidden",
+                            "code": 403,
+                            "body": "{\n  \"success\": false,\n  \"statusCode\": 403,\n  \"message\": \"Insufficient permissions\",\n  \"errors\": null\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "🔔 Notifications",
+            "description": "User notification management",
+            "item": [
+                {
+                    "name": "Get My Notifications",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/notifications?page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "notifications"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "Get paginated list of notifications for the current user."
+                    },
+                    "response": [
+                        {
+                            "name": "Notifications List",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"n1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c\",\n        \"type\": \"document.shared\",\n        \"title\": \"Document Shared With You\",\n        \"message\": \"Admin User shared 'Q1 Financial Report 2026' with you\",\n        \"isRead\": false,\n        \"resourceId\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n        \"resourceType\": \"document\",\n        \"metadata\": {\n          \"documentName\": \"Q1 Financial Report 2026\",\n          \"sharedBy\": \"Admin User\",\n          \"permission\": \"view\"\n        },\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440002\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"createdAt\": \"2026-05-06T10:00:00.000Z\"\n      },\n      {\n        \"id\": \"n2b3c4d5-e6f7-8a9b-0c1d-2e3f4a5b6c7d\",\n        \"type\": \"document.updated\",\n        \"title\": \"Document Updated\",\n        \"message\": \"'Employee Handbook' has been updated\",\n        \"isRead\": true,\n        \"resourceId\": \"e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8a9b\",\n        \"resourceType\": \"document\",\n        \"metadata\": {},\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440002\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"createdAt\": \"2026-05-05T14:00:00.000Z\"\n      },\n      {\n        \"id\": \"n3c4d5e6-f7a8-9b0c-1d2e-3f4a5b6c7d8e\",\n        \"type\": \"storage.quota_warning\",\n        \"title\": \"Storage Quota Warning\",\n        \"message\": \"Your organization is using 80% of its storage quota\",\n        \"isRead\": false,\n        \"resourceId\": null,\n        \"resourceType\": null,\n        \"metadata\": {\n          \"usagePercent\": 80,\n          \"usedBytes\": 4294967296,\n          \"quotaBytes\": 5368709120\n        },\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"createdAt\": \"2026-05-06T08:00:00.000Z\"\n      }\n    ],\n    \"total\": 12,\n    \"page\": 1,\n    \"limit\": 20\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/notifications\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Unread Count",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/notifications/unread-count",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "unread-count"
+                            ]
+                        },
+                        "description": "Returns just the count of unread notifications. Use this for badge counts in UI."
+                    },
+                    "response": [
+                        {
+                            "name": "Unread Count",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"count\": 3\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/notifications/unread-count\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Mark Notification as Read",
+                    "request": {
+                        "method": "PATCH",
+                        "url": {
+                            "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "{{notificationId}}",
+                                "read"
+                            ]
+                        },
+                        "description": "Mark a single notification as read."
+                    },
+                    "response": [
+                        {
+                            "name": "Marked as Read",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"success\": true\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/notifications/n1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c/read\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Mark All as Read",
+                    "request": {
+                        "method": "PATCH",
+                        "url": {
+                            "raw": "{{baseUrl}}/notifications/read-all",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "notifications",
+                                "read-all"
+                            ]
+                        },
+                        "description": "Mark all notifications as read for the current user."
+                    },
+                    "response": [
+                        {
+                            "name": "All Marked as Read",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"success\": true\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/notifications/read-all\"\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "📋 Audit Log",
+            "description": "Immutable audit trail of all organization actions",
+            "item": [
+                {
+                    "name": "Get Audit Logs",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/audit?page=1&limit=50",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "audit"
+                            ],
+                            "query": [
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "50"
+                                }
+                            ]
+                        },
+                        "description": "Get audit log entries for the organization. Admin/Owner only.\n\nAll possible actions:\n- document.upload, document.download, document.view\n- document.delete, document.share, document.update\n- user.login, user.logout, user.invite, user.role_change\n- org.created, org.settings_update"
+                    },
+                    "response": [
+                        {
+                            "name": "Audit Logs",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"success\": true,\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d\",\n        \"action\": \"document.upload\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"resourceId\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n        \"resourceType\": \"document\",\n        \"metadata\": {\n          \"fileName\": \"q1-report.pdf\",\n          \"fileSize\": 2097152,\n          \"mimeType\": \"application/pdf\"\n        },\n        \"ipAddress\": \"192.168.1.100\",\n        \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64)\",\n        \"kafkaOffset\": \"document-events:0:47\",\n        \"createdAt\": \"2026-05-06T10:00:00.000Z\"\n      },\n      {\n        \"id\": \"b2c3d4e5-f6a7-8b9c-0d1e-2f3a4b5c6d7e\",\n        \"action\": \"document.download\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440002\",\n        \"resourceId\": \"d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a\",\n        \"resourceType\": \"document\",\n        \"metadata\": {\n          \"documentName\": \"Q1 Financial Report 2026\"\n        },\n        \"ipAddress\": \"192.168.1.101\",\n        \"userAgent\": \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)\",\n        \"kafkaOffset\": \"document-events:0:48\",\n        \"createdAt\": \"2026-05-06T11:00:00.000Z\"\n      },\n      {\n        \"id\": \"c3d4e5f6-a7b8-9c0d-1e2f-3a4b5c6d7e8f\",\n        \"action\": \"user.role_change\",\n        \"organizationId\": \"550e8400-e29b-41d4-a716-446655440000\",\n        \"userId\": \"550e8400-e29b-41d4-a716-446655440001\",\n        \"resourceId\": \"550e8400-e29b-41d4-a716-446655440002\",\n        \"resourceType\": \"user\",\n        \"metadata\": {\n          \"previousRole\": \"viewer\",\n          \"newRole\": \"editor\",\n          \"changedBy\": \"admin@docvault.dev\"\n        },\n        \"ipAddress\": \"192.168.1.100\",\n        \"userAgent\": \"Mozilla/5.0\",\n        \"kafkaOffset\": \"user-events:0:12\",\n        \"createdAt\": \"2026-05-06T09:00:00.000Z\"\n      }\n    ],\n    \"total\": 234,\n    \"page\": 1,\n    \"limit\": 50\n  },\n  \"timestamp\": \"2026-05-06T10:00:00.000Z\",\n  \"path\": \"/api/v1/audit\"\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "❤️ Health & Metrics",
+            "description": "System health and Prometheus metrics",
+            "item": [
+                {
+                    "name": "Health Check",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "http://localhost:4000/health",
+                            "host": [
+                                "http://localhost:4000"
+                            ],
+                            "path": [
+                                "health"
+                            ]
+                        },
+                        "description": "Check if the API and all its dependencies are healthy.\nReturns 200 if healthy, 503 if any dependency is down."
+                    },
+                    "response": [
+                        {
+                            "name": "All Healthy",
+                            "status": "OK",
+                            "code": 200,
+                            "body": "{\n  \"status\": \"ok\",\n  \"info\": {\n    \"database\": { \"status\": \"up\" },\n    \"memory_heap\": {\n      \"status\": \"up\",\n      \"heapUsed\": 45678901,\n      \"threshold\": 536870912\n    },\n    \"memory_rss\": {\n      \"status\": \"up\",\n      \"rssUsed\": 87654321,\n      \"threshold\": 536870912\n    }\n  },\n  \"error\": {},\n  \"details\": {\n    \"database\": { \"status\": \"up\" },\n    \"memory_heap\": { \"status\": \"up\" },\n    \"memory_rss\": { \"status\": \"up\" }\n  }\n}"
+                        },
+                        {
+                            "name": "Database Down",
+                            "status": "Service Unavailable",
+                            "code": 503,
+                            "body": "{\n  \"status\": \"error\",\n  \"info\": {},\n  \"error\": {\n    \"database\": {\n      \"status\": \"down\",\n      \"message\": \"connect ECONNREFUSED 127.0.0.1:5432\"\n    }\n  },\n  \"details\": {\n    \"database\": { \"status\": \"down\" }\n  }\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Prometheus Metrics",
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "GET",
+                        "url": {
+                            "raw": "http://localhost:4000/metrics",
+                            "host": [
+                                "http://localhost:4000"
+                            ],
+                            "path": [
+                                "metrics"
+                            ]
+                        },
+                        "description": "Prometheus metrics endpoint. Scraped every 15 seconds by Prometheus.\nReturns text/plain format, not JSON."
+                    },
+                    "response": [
+                        {
+                            "name": "Metrics Response",
+                            "status": "OK",
+                            "code": 200,
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "text/plain; version=0.0.4; charset=utf-8"
+                                }
+                            ],
+                            "body": "# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds.\n# TYPE process_cpu_user_seconds_total counter\nprocess_cpu_user_seconds_total 0.234\n\n# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds.\n# TYPE process_cpu_system_seconds_total counter\nprocess_cpu_system_seconds_total 0.045\n\n# HELP nodejs_heap_size_used_bytes Process heap size used from Node.js in bytes.\n# TYPE nodejs_heap_size_used_bytes gauge\nnodejs_heap_size_used_bytes 45678901\n\n# HELP docvault_http_requests_total Total number of HTTP requests\n# TYPE docvault_http_requests_total counter\ndocvault_http_requests_total{method=\"GET\",route=\"/api/v1/documents\",status_code=\"200\"} 47\ndocvault_http_requests_total{method=\"POST\",route=\"/api/v1/documents/upload\",status_code=\"201\"} 12\ndocvault_http_requests_total{method=\"GET\",route=\"/api/v1/auth/me\",status_code=\"200\"} 156\n\n# HELP docvault_http_request_duration_seconds HTTP request duration in seconds\n# TYPE docvault_http_request_duration_seconds histogram\ndocvault_http_request_duration_seconds_bucket{le=\"0.01\"} 23\ndocvault_http_request_duration_seconds_bucket{le=\"0.05\"} 89\ndocvault_http_request_duration_seconds_bucket{le=\"0.1\"} 134\ndocvault_http_request_duration_seconds_bucket{le=\"+Inf\"} 156\n\n# HELP docvault_documents_uploaded_total Total documents uploaded\n# TYPE docvault_documents_uploaded_total counter\ndocvault_documents_uploaded_total{organization_id=\"550e8400\"} 12\n\n# HELP docvault_documents_downloaded_total Total document downloads\n# TYPE docvault_documents_downloaded_total counter\ndocvault_documents_downloaded_total{organization_id=\"550e8400\"} 34"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

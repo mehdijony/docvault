@@ -1,95 +1,56 @@
-// apps/web/src/hooks/use-upload.ts
-import { useState, useCallback } from 'react';
-import { useUploadDocument } from './use-documents';
+import { useState, useCallback } from "react";
+import { useUploadDocument } from "./use-documents";
 
-export interface UploadFile {
-  id: string;
-  file: File;
-  name: string;
+interface UploadState {
+  isUploading: boolean;
   progress: number;
-  status: 'pending' | 'uploading' | 'done' | 'error';
-  error?: string;
+  error: string | null;
 }
 
-export function useFileUpload() {
-  const [files, setFiles] = useState<UploadFile[]>([]);
-  const { mutateAsync: upload } = useUploadDocument();
+export function useUpload() {
+  const [state, setState] = useState<UploadState>({
+    isUploading: false,
+    progress: 0,
+    error: null,
+  });
 
-  const addFiles = useCallback((newFiles: File[]) => {
-    const uploadFiles: UploadFile[] = newFiles.map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      name: file.name,
-      progress: 0,
-      status: 'pending',
-    }));
+  const uploadMutation = useUploadDocument();
 
-    setFiles((prev) => [...prev, ...uploadFiles]);
-    return uploadFiles;
-  }, []);
+  const upload = useCallback(
+    async (file: File, name: string, description?: string, tags?: string[]) => {
+      setState({ isUploading: true, progress: 0, error: null });
 
-  const uploadFiles = useCallback(
-    async (
-      filesToUpload: UploadFile[],
-      metadata: { folderId?: string; tags?: string[] },
-    ) => {
-      for (const uploadFile of filesToUpload) {
-        setFiles((prev) =>
-          prev.map((f) =>
-            f.id === uploadFile.id ? { ...f, status: 'uploading' } : f,
-          ),
-        );
-
-        try {
-          await upload({
-            file: uploadFile.file,
-            metadata: {
-              name: uploadFile.name.replace(/\.[^/.]+$/, ''), // Remove extension
-              ...metadata,
-            },
-            onProgress: (progress) => {
-              setFiles((prev) =>
-                prev.map((f) =>
-                  f.id === uploadFile.id ? { ...f, progress } : f,
-                ),
-              );
-            },
-          });
-
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadFile.id
-                ? { ...f, status: 'done', progress: 100 }
-                : f,
-            ),
-          );
-        } catch (error) {
-          setFiles((prev) =>
-            prev.map((f) =>
-              f.id === uploadFile.id
-                ? { ...f, status: 'error', error: (error as Error).message }
-                : f,
-            ),
-          );
-        }
+      try {
+        const result = await uploadMutation.mutateAsync({
+          dto: {
+            file,
+            name: name || file.name,
+            description,
+            tags,
+          },
+          onProgress: (progress: number) => {
+            setState((prev) => ({ ...prev, progress }));
+          },
+        });
+        setState({ isUploading: false, progress: 100, error: null });
+        return result;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Upload failed";
+        setState({ isUploading: false, progress: 0, error: message });
+        throw err;
       }
     },
-    [upload],
+    [uploadMutation]
   );
 
-  const removeFile = useCallback((id: string) => {
-    setFiles((prev) => prev.filter((f) => f.id !== id));
-  }, []);
-
-  const clearCompleted = useCallback(() => {
-    setFiles((prev) => prev.filter((f) => f.status !== 'done'));
+  const reset = useCallback(() => {
+    setState({ isUploading: false, progress: 0, error: null });
   }, []);
 
   return {
-    files,
-    addFiles,
-    uploadFiles,
-    removeFile,
-    clearCompleted,
+    ...state,
+    upload,
+    reset,
   };
 }
